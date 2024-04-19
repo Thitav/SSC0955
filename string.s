@@ -1,56 +1,178 @@
 loadn r1, #str1
-loadn r2, #str2
-loadn r3, #11
-call memcopy
-
-loadn r2, #0
-loadn r1, #str1
-call prints
-loadn r1, #str2
-call prints
+loadn r2, #16
+call stoi
 
 halt
 
-; memcopy : copia um bloco continuo de memoria de um endereco para outro
-; in * r1 : origem
-; in * r2 : destino
-; in * r3 : tamanho a ser copiado
-memcopy:
+; stoi    : converte uma string para um inteiro, seguindo a base especificada
+; in * r1 : string
+; in r2   : base
+; out r7  : numero
+stoi:
+  push r1
+  push r3
+  push r4
+  push r5
+  push r6
+
+  loadn r4, #0
+  loadn r5, #'0'
+  loadn r6, #'W'
+  loadn r7, #0
+
+  stoi_loop:
+    loadi r3, r1
+    cmp r3, r4
+    jeq stoi_rts
+
+    cmp r3, r6
+    jeg stoi_loop_eg  
+    
+    sub r3, r3, r5
+    jmp stoi_loop_le
+    stoi_loop_eg:
+    sub r3, r3, r6
+    stoi_loop_le:
+
+    mul r7, r7, r2
+    add r7, r7, r3
+
+    inc r1
+    jmp stoi_loop
+
+  stoi_rts:
+    pop r6
+    pop r5
+    pop r4
+    pop r3
+    pop r1
+    rts
+
+; itos    : converte um inteiro para uma string, seguindo a base especificada
+; in r1   : numero
+; in * r2 : string de destino
+; in r3   : base
+itos:
+  push r0
+  push r1
   push r4
   push r5
   push r6
   push r7
+  push r2
 
-  mov r4, r1
-  mov r5, r2
-
+  loadn r5, #'0'
+  loadn r6, #10
   loadn r7, #0
+  loadn r0, #39
 
-  memcopy_loop:
-    cmp r3, r7
-    jeq memcopy_rts
+  itos_loop:
+    mod r4, r1, r3
 
-    loadi r6, r4
-    storei r5, r6
+    cmp r4, r6
+    jle itos_loop_le
+    add r4, r4, r0
 
-    inc r4
-    inc r5
-    dec r3
-    jmp memcopy_loop
+    itos_loop_le:
+    add r4, r4, r5
+    storei r2, r4
 
-  memcopy_rts:
+    inc r2
+    div r1, r1, r3
+    cmp r1, r7
+    jgr itos_loop
+
+  storei r2, r7
+
+  pop r2
+  mov r1, r2
+  call strrev
+
+  itos_rts:
     pop r7
     pop r6
     pop r5
     pop r4
+    pop r1
+    pop r0
+    rts
+
+; strcmp  : compara duas strings terminadas em '\0'
+; in * r1 : primeira string
+; in * r2 : segunda string
+; out r7  : 0 caso forem diferentes, 1 caso forem iguais
+strcmp:
+  push r1
+  push r2
+  push r3
+  push r4
+  push r5
+
+  loadn r5, #0
+  loadn r7, #1
+
+  strcmp_loop:
+    loadi r3, r1
+    loadi r4, r2
+    cmp r3, r4
+    jne strcmp_ne
+    cmp r3, r5
+    jeq strcmp_rts
+
+    inc r1
+    inc r2
+    jmp strcmp_loop
+
+  strcmp_rts:
+    pop r5
+    pop r4
+    pop r3
+    pop r2
+    pop r1
+    rts
+  strcmp_ne:
+    loadn r7, #0
+    jmp strcmp_rts
+
+; memcpy  : copia um bloco de memoria continuo para um endereco de destino
+; in * r1 : origem
+; in * r2 : destino
+; in * r3 : tamanho a ser copiado
+memcpy:
+  push r1
+  push r2
+  push r3
+  push r4
+  push r5
+
+  loadn r5, #0
+
+  memcpy_loop:
+    cmp r3, r5
+    jeq memcpy_rts
+
+    loadi r4, r1
+    storei r2, r4
+
+    inc r1
+    inc r2
+    dec r3
+    jmp memcpy_loop
+
+  memcpy_rts:
+    pop r5
+    pop r4
+    pop r3
+    pop r2
+    pop r1
     rts
 
 ; strrev  : reverte uma string (inplace)
-; in * r1 : endereco da string
+; in * r1 : string
 strrev:
-  push r2 ; copia de r1, usado como iterador para a string
-  push r5 ; caracter apontado por r2
-  push r6 ; caracter apontado por r7
+  push r1 ; copia de r1, usado como iterador para a string
+  push r2 ; caracter apontado por r2
+  push r3 ; caracter apontado por r7
   push r7 ; tamanho da string (out strlen), iterador reverso
 
   ; endereco de memoria do fim da string - 1
@@ -59,92 +181,87 @@ strrev:
   dec r7
   add r7, r7, r1
 
-  ; copia r1 para r2 para usar r2 como iterador
-  mov r2, r1
-
   strrev_loop:
-    ; r2 >= r7 ? return
-    cmp r2, r7
+    ; r1 >= r7 ? return
+    cmp r1, r7
     jeg strrev_rts
 
     ; troca a posicao entre os caracteres
-    loadi r5, r2
-    loadi r6, r7
-    storei r2, r6 
-    storei r7, r5
+    loadi r2, r1
+    loadi r3, r7
+    storei r1, r3 
+    storei r7, r2
 
     dec r7
-    inc r2
+    inc r1
     jmp strrev_loop
 
   strrev_rts:
     pop r7
-    pop r6
-    pop r5
+    pop r3
     pop r2
+    pop r1
     rts
 
-; strlen  : calcula o numero de caracteres de uma string terminada em '\0' (ignorando o '\0')
-; in * r1 : endereco da string
+; strlen  : calcula o numero de caracteres de uma string (ignorando '\0')
+; in * r1 : string
 ; out r7  : numero de caracteres
 strlen:
-  push r2 ; copia de r1, usado como iterador para a string
-  push r5 ; caractere da string apontado por r2
-  push r6 ; caractere que termina a string ('\0')
+  push r1 ; copia de r1, usado como iterador para a string
+  push r2 ; caractere da string apontado por r2
+  push r3 ; caractere que termina a string ('\0')
 
-  ; copia r1 para r2 para usar r2 como iterador 
-  mov r2, r1
-
-  loadn r6, #'\0'
-  loadn r7, #0 ; limpa o output
+  loadn r3, #0
+  loadn r7, #0
 
   strlen_loop:
-    loadi r5, r2
+    loadi r2, r1
 
-    cmp r5, r6
+    cmp r2, r3
     jeq strlen_rts
     
-    inc r2
+    inc r1
     inc r7
     jmp strlen_loop
 
   strlen_rts:
-    pop r6
-    pop r5
+    pop r3
     pop r2
+    pop r1
     rts
 
+; prints    : imprime uma string
+; in * r1   : string
+; in mut r2 : posicao para imprimir a string : posicao final da string
 prints:
-  push r0
+  push r1
   push r3
   push r4
   push r5
   push r6
   push r7
 
-  mov r3, r1
-
-  loadn r5, #'\0'
+  loadn r5, #0
   loadn r6, #'\n'
   loadn r7, #40
 
   prints_loop:
-    loadi r4, r3
+    loadi r3, r1
 
-    cmp r4, r5
+    cmp r3, r5
     jeq prints_rts
 
-    cmp r4, r6
-    jne prints_loop_nnl
-    mod r0, r2, r7
-    sub r0, r7, r0
-    add r2, r2, r0
+    cmp r3, r6
+    jne prints_loop_ne
+    mod r4, r2, r7
+    sub r4, r7, r4
+    add r2, r2, r4
     dec r2
 
-    prints_loop_nnl:
-    outchar r4, r2
+    prints_loop_ne:
+    outchar r3, r2
+    inc r1
     inc r2
-    inc r3
     jmp prints_loop
 
   prints_rts:
@@ -153,7 +270,7 @@ prints:
     pop r5
     pop r4
     pop r3
-    pop r0
+    pop r1
     rts
-str1 : string "Hello World\n"
-str2 : string "World Helkn\n"
+
+str1 : string "ffff"

@@ -1,8 +1,49 @@
 loadn r1, #mystr
-loadn r2, #0
-call prints
+loadn r2, #36
+loadn r3, #29
+call puts
 
 halt
+
+; putc  : coloca um caractere na posicao x y da tela
+; in r1 : caractere
+; in r2 : x
+; in r3 : y
+putc:
+  push r3
+  push r4
+
+  loadn r4, #40
+
+  mul r3, r3, r4
+  add r3, r3, r2
+  outchar r1, r3
+
+  putc_rts:
+    pop r4
+    pop r3
+    rts
+
+; puts    : coloca uma string na posicao x y da tela
+; in * r1 : string
+; in r2   : x
+; in r3   : y
+puts:
+  push r2
+  push r3
+  push r4
+
+  loadn r4, #40
+
+  mul r3, r3, r4
+  add r2, r3, r2
+  call prints
+
+  puts_rts:
+    pop r4
+    pop r3
+    pop r2
+    rts
 
 ; prints    : imprime uma string
 ; in * r1   : endereco da string
@@ -47,4 +88,4 @@ prints:
     pop r1
     rts
 
-mystr : string "test\ntest2\nbye"
+mystr : string "AAAA"

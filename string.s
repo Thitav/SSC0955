@@ -1,16 +1,3 @@
-loadn r1, #str1
-loadn r2, #0
-call prints
-
-loadn r2, #'C'
-loadn r3, #4
-call memset
-
-loadn r2, #4
-call prints
-
-halt
-
 ; stoi    : converte uma string para um inteiro, seguindo a base especificada
 ; in * r1 : string
 ; in r2   : base
@@ -60,7 +47,6 @@ stoi:
 ; in * r2 : string de destino
 ; in r3   : base
 itos:
-  push r0
   push r1
   push r4
   push r5
@@ -70,15 +56,14 @@ itos:
 
   loadn r5, #'0'
   loadn r6, #10
-  loadn r7, #0
-  loadn r0, #39
+  loadn r7, #39
 
   itos_loop:
     mod r4, r1, r3
 
     cmp r4, r6
     jle itos_loop_le
-    add r4, r4, r0
+    add r4, r4, r7
 
     itos_loop_le:
     add r4, r4, r5
@@ -86,10 +71,9 @@ itos:
 
     inc r2
     div r1, r1, r3
-    cmp r1, r7
-    jgr itos_loop
+    jnz itos_loop
 
-  storei r2, r7
+  storei r2, r1
 
   pop r2
   mov r1, r2
@@ -101,7 +85,6 @@ itos:
     pop r5
     pop r4
     pop r1
-    pop r0
     rts
 
 ; memset  : preenche um bloco de memoria continuo com um valor
@@ -121,7 +104,7 @@ memset:
     inc r1
     dec r3
     cmp r3, r4
-    jne memset_loop
+    jgr memset_loop
   
   memset_rts:
     pop r4
@@ -143,16 +126,15 @@ memcpy:
   loadn r5, #0
 
   memcpy_loop:
-    cmp r3, r5
-    jeq memcpy_rts
-
     loadi r4, r1
     storei r2, r4
 
     inc r1
     inc r2
     dec r3
-    jmp memcpy_loop
+    
+    cmp r3, r5
+    jgr memcpy_loop
 
   memcpy_rts:
     pop r5
@@ -179,14 +161,14 @@ strcmp:
   strcmp_loop:
     loadi r3, r1
     loadi r4, r2
-    cmp r3, r4
-    jne strcmp_ne
-    cmp r3, r5
-    jeq strcmp_rts
 
     inc r1
     inc r2
-    jmp strcmp_loop
+
+    cmp r3, r4
+    jne strcmp_loop_ne
+    cmp r3, r5
+    jne strcmp_loop
 
   strcmp_rts:
     pop r5
@@ -195,7 +177,7 @@ strcmp:
     pop r2
     pop r1
     rts
-  strcmp_ne:
+  strcmp_loop_ne:
     loadn r7, #0
     jmp strcmp_rts
 
@@ -214,10 +196,6 @@ strrev:
   add r7, r7, r1
 
   strrev_loop:
-    ; r1 >= r7 ? return
-    cmp r1, r7
-    jeg strrev_rts
-
     ; troca a posicao entre os caracteres
     loadi r2, r1
     loadi r3, r7
@@ -226,7 +204,10 @@ strrev:
 
     dec r7
     inc r1
-    jmp strrev_loop
+
+    ; r1 >= r7 ? return
+    cmp r1, r7
+    jle strrev_loop
 
   strrev_rts:
     pop r7
@@ -261,48 +242,3 @@ strlen:
     pop r2
     pop r1
     rts
-
-; prints    : imprime uma string
-; in * r1   : string
-; in mut r2 : posicao para imprimir a string : posicao final da string
-prints:
-  push r1
-  push r3
-  push r4
-  push r5
-  push r6
-  push r7
-
-  loadn r5, #0
-  loadn r6, #'\n'
-  loadn r7, #40
-
-  prints_loop:
-    loadi r3, r1
-
-    cmp r3, r5
-    jeq prints_rts
-
-    cmp r3, r6
-    jne prints_loop_ne
-    mod r4, r2, r7
-    sub r4, r7, r4
-    add r2, r2, r4
-    dec r2
-
-    prints_loop_ne:
-    outchar r3, r2
-    inc r1
-    inc r2
-    jmp prints_loop
-
-  prints_rts:
-    pop r7
-    pop r6
-    pop r5
-    pop r4
-    pop r3
-    pop r1
-    rts
-
-str1 : string "ffff"

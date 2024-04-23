@@ -1,9 +1,51 @@
-loadn r1, #mystr
-loadn r2, #36
-loadn r3, #29
-call puts
+loadn r1, #stdinw
+loadn r2, #'a'
+call swrite
+
+loadn r1, #stdinr
+call sread
+
+loadn r1, #stdin_buf
+loadn r2, #0
+call prints
 
 halt
+
+; sread   : le de uma stream e avanca o ponteiro de leitura
+; in * r1 : endereco do ponteiro de leitura da stream
+; out r7  : valor lido
+sread:
+  push r1
+  push r3
+
+  loadi r3, r1
+  loadi r7, r3
+
+  inc r3
+  storei r1, r3
+
+  sread_rts:
+    pop r3
+    pop r1
+    rts
+
+; swrite  : escreve em uma stream e avanca o ponteiro de escrita
+; in * r1 : endereco do ponteiro de escrita da stream
+; in r2   : valor a ser escrito
+swrite:
+  push r1
+  push r3
+
+  loadi r3, r1
+  storei r3, r2
+  
+  inc r3
+  storei r1, r3
+
+  swrite_rts:
+    pop r3
+    pop r1
+    rts
 
 ; putc  : coloca um caractere na posicao x y da tela
 ; in r1 : caractere
@@ -89,3 +131,13 @@ prints:
     rts
 
 mystr : string "AAAA"
+
+stdin:
+  stdinr       : var #1
+  stdinw       : var #1
+  stdin_end    : var #1
+  stdin_buf    : var #1024
+  stdin_buf_end:
+  static stdinr, #stdin_buf
+  static stdinw, #stdin_buf
+  static stdin_end, #stdin_buf_end

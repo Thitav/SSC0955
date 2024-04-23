@@ -1,6 +1,13 @@
 loadn r1, #str1
-loadn r2, #16
-call stoi
+loadn r2, #0
+call prints
+
+loadn r2, #'C'
+loadn r3, #4
+call memset
+
+loadn r2, #4
+call prints
 
 halt
 
@@ -97,6 +104,64 @@ itos:
     pop r0
     rts
 
+; memset  : preenche um bloco de memoria continuo com um valor
+; in * r1 : endereco do bloco de memoria
+; in r2   : valor a ser escrito
+; in r3   : tamanho do bloco
+memset:
+  push r1
+  push r3
+  push r4
+
+  loadn r4, #0
+
+  memset_loop:
+    storei r1, r2
+
+    inc r1
+    dec r3
+    cmp r3, r4
+    jne memset_loop
+  
+  memset_rts:
+    pop r4
+    pop r3
+    pop r1
+    rts
+
+; memcpy  : copia um bloco de memoria continuo para um endereco de destino
+; in * r1 : origem
+; in * r2 : destino
+; in r3   : tamanho a ser copiado
+memcpy:
+  push r1
+  push r2
+  push r3
+  push r4
+  push r5
+
+  loadn r5, #0
+
+  memcpy_loop:
+    cmp r3, r5
+    jeq memcpy_rts
+
+    loadi r4, r1
+    storei r2, r4
+
+    inc r1
+    inc r2
+    dec r3
+    jmp memcpy_loop
+
+  memcpy_rts:
+    pop r5
+    pop r4
+    pop r3
+    pop r2
+    pop r1
+    rts
+
 ; strcmp  : compara duas strings terminadas em '\0'
 ; in * r1 : primeira string
 ; in * r2 : segunda string
@@ -133,39 +198,6 @@ strcmp:
   strcmp_ne:
     loadn r7, #0
     jmp strcmp_rts
-
-; memcpy  : copia um bloco de memoria continuo para um endereco de destino
-; in * r1 : origem
-; in * r2 : destino
-; in * r3 : tamanho a ser copiado
-memcpy:
-  push r1
-  push r2
-  push r3
-  push r4
-  push r5
-
-  loadn r5, #0
-
-  memcpy_loop:
-    cmp r3, r5
-    jeq memcpy_rts
-
-    loadi r4, r1
-    storei r2, r4
-
-    inc r1
-    inc r2
-    dec r3
-    jmp memcpy_loop
-
-  memcpy_rts:
-    pop r5
-    pop r4
-    pop r3
-    pop r2
-    pop r1
-    rts
 
 ; strrev  : reverte uma string (inplace)
 ; in * r1 : string

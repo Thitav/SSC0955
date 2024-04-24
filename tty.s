@@ -1,35 +1,39 @@
-jmp data_e
-tty_buff : var #1200
-tty_buff_e:
-data_e:
+jmp vars_e
+vars:
+  ttybuf : var #1200
+  ttybuf_e:
 
-main:
-  call tgetc
-  jmp main
+  sout:
+  sout_op : var #1
+  sout_buf : var #1
+  sout_buf_e : var #1
+  static sout_op, #ttybuf
+  static sout_buf, #ttybuf
+  static sout_buf_e, #ttybuf_e
+vars_e:
 
-halt
-
-; in r0  : cursor
-; out r7 : character
-tgetc:
+; tflush : descarrega o buffer de saída
+; 
+tflush:
   push r1
   push r2
+  push r3
 
-  loadn r1, #255
-  loadn r2, #126
+  loadn r1, #sout
+  loadn r2, #1
+  loadn r3, #0
+  call sseek
 
-  outchar r2, r0
+  loadn r2, #1200
+  tflush_loop:
+    call sread
+    outhcar r7, r3
+    inc r3
+    cmp r3, r2
+    jne tflush_loop
 
-  tgetc_loop:
-    inchar r7
-    cmp r7, r1
-    jeq tgetc_loop
-
-  outchar r7, r0
-  inc r0
-
-  tgetc_rts:
+  tflush_rts:
+    pop r3
     pop r2
     pop r1
     rts
-

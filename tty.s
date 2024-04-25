@@ -1,72 +1,96 @@
 jmp vars_e
 vars:
-  tty_s :
-    ttyread : var #1
-    ttywrite : var #1
-    ttychunk : var #1
-    ttybuf : var #1
-    ttybuf_end : var #1
+  _ : var #10
+  ebuf : 
 
-  buf : var #3
-  buf_end :
+  tstruct:
+  ts_reader : var #1
+  ts_writer : var #1
+  ts_eaddr : var #1
+  ts_bsize : var #1
 
-  static ttyread, #buf
-  static ttywrite, #buf
-  static ttychunk, #40
-  static ttybuf, #buf
-  static ttybuf_end, #buf_end
+  static ts_reader, #10
+  static ts_writer, #10
+  static ts_eaddr, #ebuf
+  static ts_bsize, #10
 vars_e:
 
-; estrutura de um buffer tty
-; 0 : endereço de leitura
-; 1 : endereço de escrita
-; 2 : tamanho do chunk
-; 3 : endereço de início do buffer
-; 4 : endereço de fim do buffer
-
-loadn r1, #tty_s
+loadn r1, #tstruct
 loadn r2, #'A'
-call tputc
-loadn r2, #'B'
-call tputc
-loadn r2, #'\0'
-call tputc
-loadn r2, #'C'
-call tputc
+loadn r3, #0
+loadn r4, #9
+main:
+  call twrite
 
-loadn r1, #buf
+  inc r3
+  cmp r3, r4
+  jne main
+
+loadn r2, #'\0'
+call twrite
+loadn r2, #'B'
+call twrite
+
+loadn r1, #_
 loadn r2, #0
 call prints
 
 halt
- 
-; tputc   : escreve um caractere no buffer tty
-; in * r1 : endereco de uma estrutura de buffer tty
-; in r2   : caractere a ser escrito
-tputc:
+
+; in * r1 : tstruct
+; out r7 : caractere
+tread:
+  push r2
+  push r3
+  push r1
+
+  loadi r2, r1 ; reader
+  inc r1
+  inc r1
+  loadi r3, r1 ; eaddr
+
+  sub r3, r3, r2 
+  loadi r7, r3
+
+  dec r2
+  jnz tread_rts
+  inc r1
+  loadi r2, r1 ; reader = size
+
+  tread_rts:
+    pop r1
+    storei r1, r2
+
+    pop r3
+    pop r2
+    rts
+
+; in * r1 : tstruct
+; in r2 : caractere
+twrite:
   push r1
   push r3
   push r4
-  push r5
 
-  inc r1 ; 0 + 1 = 1 : endereco de escrita
-  loadi r3, r1 ; carrerga o endereco de escrita
-  storei r3, r2 ; salva o caractere no buffer
-  inc r3 ; incrementa o endereco de escrita
+  inc r1
+  push r1
+  loadi r3, r1 ; writer
+  inc r1
+  loadi r4, r1 ; eaddr
 
-  loadn r4, #3
-  add r4, r4, r1 ; 1 + 3 = 4 : endereco de fim do buffer
-  loadi r5, r4 ; carrega o endereco de fim do buffer
-  cmp r3, r5 ; se endereco de escrita < endereco de fim do buffer
-  jle tputc_rts ; entao retorna
+  sub r4, r4, r3
+  storei r4, r2
 
-  dec r4 ; 4 - 1 = 3 : endereco de inicio do buffer
-  loadi r3, r4 ; carrega o endereco de inicio do buffer
+  dec r3
+  jnz twrite_rts
 
-  tputc_rts:
-    storei r1, r3 ; salva o novo endereco de escrita
-    
-    pop r5
+  inc r1
+  loadi r3, r1 ; writer = size
+
+  twrite_rts:
+    pop r1
+    storei r1, r3
+
     pop r4
     pop r3
     pop r1

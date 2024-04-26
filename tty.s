@@ -82,13 +82,29 @@ twrite:
   storei r4, r2
 
   dec r3
-  jnz twrite_rts
+  jnz twrite_nz
 
   inc r1
   loadi r3, r1 ; writer = size
 
-  twrite_rts:
+  twrite_nz:
     pop r1
+    loadi r5, r1 ; reader
+    cmp r3, r5
+    jne twrite_rts
+
+    loadn r6, #40
+    sub r5, r5, r6
+
+    loadn r6, #0
+    loadn r7, #1200
+    twrite_nz_loop:
+      inc r6
+      cmp r6, r7
+      jne twrite_nz_loop
+
+  twrite_rts:
+    ; pop r1
     storei r1, r3
 
     pop r4

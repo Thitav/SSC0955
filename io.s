@@ -1,7 +1,6 @@
 ; getc   : aguarda e le um caractere do teclado
 ; out r7 : caractere
 getc:
-  push r0
   push r1
 
   loadn r1, #255
@@ -13,7 +12,6 @@ getc:
 
   getc_rts:
     pop r1
-    pop r0
     rts
 
 ; putc  : coloca um caractere na posicao x y da tela

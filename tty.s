@@ -91,6 +91,9 @@ twrite:
 
     loadn r6, #40
     sub r5, r5, r6
+    dec r1
+    storei r1, r5
+    inc r1 
     add r4, r4, r6
 
     push r1
@@ -107,14 +110,14 @@ twrite:
     pop r1
 
     loadn r6, #0
-    loadn r7, #1200
+    loadn r5, #1200
     twrite_nz_loop:
-      loadi r5, r4
-      outchar r5, r6
+      call tread
+      outchar r7, r6
 
       dec r4
       inc r6
-      cmp r6, r7
+      cmp r6, r5
       jne twrite_nz_loop
 
   twrite_rts:
